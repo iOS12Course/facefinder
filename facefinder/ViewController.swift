@@ -9,10 +9,12 @@
 import UIKit
 
 class ViewController: UIViewController {
-
+    @IBOutlet weak var spinner: UIActivityIndicatorView!
+    @IBOutlet weak var messagelbl: UILabel!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+        spinner.startAnimating()
     }
 
 
