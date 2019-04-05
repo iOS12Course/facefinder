@@ -20,7 +20,7 @@ class ViewController: UIViewController {
     }
     
     func setupImageView() {
-        guard let image = UIImage(named: "face") else { return }
+        guard let image = UIImage(named: "faces") else { return }
         
         guard let cgImage = image.cgImage else
         {
@@ -40,10 +40,32 @@ class ViewController: UIViewController {
         
         spinner.startAnimating()
         
-        performVisionRequest(forImage: cgImage)
+        DispatchQueue.global(qos: .background).async {
+             self.performVisionRequest(forImage: cgImage, with: scaledHeight)
+        }
+       
+    }
+    
+    func createFaceOutline(for rectangle: CGRect) {
+        let yellowView = UIView()
+        yellowView.backgroundColor = .clear
+        yellowView.layer.borderColor = UIColor.yellow.cgColor
+        yellowView.layer.borderWidth = 3
+        yellowView.layer.cornerRadius = 5
+        yellowView.alpha = 0.0
+        yellowView.frame = rectangle
+        self.view.addSubview(yellowView)
+        
+        UIView.animate(withDuration: 0.3) {
+            yellowView.alpha = 0.75
+            self.spinner.alpha = 0.0
+            self.messagelbl.alpha = 0.0
+        }
+        
+        self.spinner.stopAnimating()
     }
 
-    func performVisionRequest(forImage image: CGImage) {
+    func performVisionRequest(forImage image: CGImage, with scaledHeight:CGFloat ) {
         let faceDetectionRequest = VNDetectFaceRectanglesRequest { (request, error) in
             if let error = error {
                 debugPrint("Failed to detect face:", error)
@@ -52,8 +74,17 @@ class ViewController: UIViewController {
             
             request.results?.forEach({ (result) in
                 guard let faceObservation = result as? VNFaceObservation else { return }
+                DispatchQueue.main.async {
+                    let width = self.view.frame.width * faceObservation.boundingBox.width
+                    let height = scaledHeight * faceObservation.boundingBox.height
+                    let x = self.view.frame.width * faceObservation.boundingBox.origin.x
+                    let y = scaledHeight * (1 - faceObservation.boundingBox.origin.y) - height
+                    
+                    let faceRectangle = CGRect(x: x, y: y, width: width, height: height)
+                    self.createFaceOutline(for: faceRectangle)
+                }
                 
-                debugPrint("Bounding box:" , faceObservation.boundingBox)
+               
             })
         }
         
